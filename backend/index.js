@@ -14,3 +14,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+// Shopify OAuth routes
+const shopifyRoutes = require('./routes/shopify');
+app.use('/api/shopify', shopifyRoutes);
