@@ -18,3 +18,7 @@ app.listen(PORT, () => {
 // Shopify OAuth routes
 const shopifyRoutes = require('./routes/shopify');
 app.use('/api/shopify', shopifyRoutes);
+
+// Analytics routes
+const analyticsRoutes = require('./routes/analytics');
+app.use('/api/analytics', analyticsRoutes);

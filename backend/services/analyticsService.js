@@ -36,6 +36,46 @@ async function getProductVelocityReport(storeId) {
   }
 }
 
-module.exports = { 
-    getProductVelocityReport 
+
+/**
+ * Stores the velocity report in the product_velocity table
+ * Clears previous entries for this store before saving
+ */
+async function saveVelocityReportToDB(storeId, velocityData) {
+  const client = await pool.connect();
+  try {
+    // Clear old report for the store
+    await client.query('DELETE FROM product_velocity WHERE store_id = $1', [storeId]);
+
+    // Insert new report
+    for (const item of velocityData) {
+      const isSlow = item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30;
+
+      await client.query(
+        `INSERT INTO product_velocity 
+          (store_id, sku, title, total_units_sold, avg_units_per_day, last_sale_date, days_since_last_sale, is_slow)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          storeId,
+          item.sku,
+          item.title,
+          item.total_units_sold,
+          item.avg_units_per_day,
+          item.last_sale_date,
+          item.days_since_last_sale,
+          isSlow,
+        ]
+      );
+    }
+  } catch (err) {
+    console.error('❌ Error saving velocity report:', err.message);
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = {
+  getProductVelocityReport,
+  saveVelocityReportToDB
 };
+

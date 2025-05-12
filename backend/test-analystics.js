@@ -1,4 +1,7 @@
-const { getProductVelocityReport } = require('./services/analyticsService');
+const { 
+    getProductVelocityReport, 
+    saveVelocityReportToDB, 
+} = require('./services/analyticsService');
 const { Pool } = require('pg');
 require('dotenv').config();
 
