@@ -1,6 +1,7 @@
 import React, { use, useEffect, useState, useRef } from 'react';
 import { getVelocityReport } from '../services/api';
 import VelocityChart from './VelocityChart';
+import FastSlowVelocityChart from './FastSlowVelocityChart';
 
 
 
@@ -25,6 +26,14 @@ const VelocityDashboard = ({ storeId }) => {
     setShowFastOnly(false);
     setSelectedProducts([]); // 👈 clear selections
   };
+
+  const fastProducts = filtered.filter(
+    item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
+  );
+
+  const slowProducts = filtered.filter(
+    item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
+  );
 
   // Fetch data from the API
   // Filter data based on search input and fast/slow movers
@@ -220,12 +229,26 @@ const VelocityDashboard = ({ storeId }) => {
       </table>
       
       {/* CHART for selected products */}
-      {chartData.length > 0 ? (
+      {selectedProducts.length > 0 ? (
         <>
           <div className="text-indigo-700 font-medium mb-2">
-            Showing chart for {chartData.length} product{chartData.length > 1 ? 's' : ''}.
+            Showing chart for {selectedProducts.length} selected product{selectedProducts.length > 1 ? 's' : ''}.
           </div>
-          <VelocityChart data={chartData} />
+          <VelocityChart data={selectedProducts} />
+        </>
+      ) : showFastOnly ? (
+        <>
+          <div className="text-indigo-700 font-medium mb-2">
+            Showing chart for {fastProducts.length} fast-moving product{fastProducts.length > 1 ? 's' : ''}.
+          </div>
+          <FastSlowVelocityChart data={fastProducts} />
+        </>
+      ) : showSlowOnly ? (
+        <>
+          <div className="text-indigo-700 font-medium mb-2">
+            Showing chart for {slowProducts.length} slow-moving product{slowProducts.length > 1 ? 's' : ''}.
+          </div>
+          <FastSlowVelocityChart data={slowProducts} />
         </>
       ) : (
         <div className="text-gray-500 italic mb-2">
@@ -233,9 +256,9 @@ const VelocityDashboard = ({ storeId }) => {
         </div>
       )}
 
-      {selectedProducts.length > 0 && (
+      {/* {selectedProducts.length > 0 && (
         <VelocityChart data={selectedProducts} />
-      )}
+      )} */}
 
       {selectedProducts.length > 0 && (
         <button
