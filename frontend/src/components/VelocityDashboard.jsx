@@ -1,4 +1,5 @@
 import React, { use, useEffect, useState, useRef } from 'react';
+import { unparse } from 'papaparse';
 import { getVelocityReport } from '../services/api';
 import VelocityChart from './VelocityChart';
 import FastSlowVelocityChart from './FastSlowVelocityChart';
@@ -34,6 +35,34 @@ const VelocityDashboard = ({ storeId }) => {
   const slowProducts = filtered.filter(
     item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
   );
+
+  // Export Chart as CSV function
+  const handleExportCSV = () => {
+    const dataToExport =
+      selectedProducts.length > 0
+        ? selectedProducts
+        : showFastOnly
+          ? fastProducts
+          : showSlowOnly
+            ? slowProducts
+            : [];
+
+    if (dataToExport.length === 0) {
+      alert('No data to export.');
+      return;
+    }
+
+    const csv = unparse(dataToExport);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'velocity_report.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Fetch data from the API
   // Filter data based on search input and fast/slow movers
@@ -259,7 +288,8 @@ const VelocityDashboard = ({ storeId }) => {
       {/* {selectedProducts.length > 0 && (
         <VelocityChart data={selectedProducts} />
       )} */}
-
+      
+      {/* Clear selections button */}
       {selectedProducts.length > 0 && (
         <button
           onClick={() => setSelectedProducts([])}
@@ -268,6 +298,14 @@ const VelocityDashboard = ({ storeId }) => {
           Clear the Chart 
         </button>
       )}
+      {/* Download CSV button */}
+      <button
+        onClick={handleExportCSV}
+        className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+      >
+        📤 Download CSV
+      </button>
+
     </div>
   );
 };
