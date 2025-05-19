@@ -1,5 +1,8 @@
 import React, { use, useEffect, useState, useRef } from 'react';
 import { unparse } from 'papaparse';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+
 import { getVelocityReport } from '../services/api';
 import VelocityChart from './VelocityChart';
 import FastSlowVelocityChart from './FastSlowVelocityChart';
@@ -52,7 +55,18 @@ const VelocityDashboard = ({ storeId }) => {
       return;
     }
 
-    const csv = unparse(dataToExport);
+    const formattedData = dataToExport.map(item => ({
+      sku: item.sku,
+      title: item.title,
+      registered_date: item.registered_date ? new Date(item.registered_date).toISOString().split('T')[0]: '-', // Assuming this is a date field
+      total_units_sold: item.total_units_sold,
+      avg_units_per_day: item.avg_units_per_day,
+      days_since_last_sale: item.days_since_last_sale,
+      last_sale_date: item.last_sale_date ? new Date(item.last_sale_date).toISOString().split('T')[0]: '-',
+      is_slow: item.is_slow ? 'Yes' : 'No',
+    }));
+
+    const csv = unparse(formattedData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
 
@@ -64,27 +78,53 @@ const VelocityDashboard = ({ storeId }) => {
     document.body.removeChild(link);
   };
 
+  // Export Chart as PDF function
+  const handleDownloadChartPDF = async () => {
+    const chartElement = document.getElementById('velocity-chart');
+
+    if (!chartElement) {
+      alert('No chart to export!');
+      return;
+    }
+
+    const canvas = await html2canvas(chartElement);
+    const imgData = canvas.toDataURL('image/png');
+
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'px',
+      format: [canvas.width, canvas.height],
+    });
+
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    pdf.save('velocity_chart.pdf');
+  };
+
   // Fetch data from the API
   // Filter data based on search input and fast/slow movers
   const chartData =
-  selectedProducts.length > 0
-    ? selectedProducts
-    : showFastOnly
-      ? filtered.filter(
-          item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
-        )
-      : showSlowOnly
+    selectedProducts.length > 0
+      ? selectedProducts
+      : showFastOnly
         ? filtered.filter(
-            item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
+            item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
           )
-        : [];
-
+        : showSlowOnly
+          ? filtered.filter(
+              item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
+            )
+          : [];
+  
+          const today = new Date().toISOString().split('T')[0];
+          const lastYear = new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+            .toISOString()
+            .split('T')[0];
 
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const report = await getVelocityReport(storeId);
+        const report = await getVelocityReport(storeId, lastYear, today);
         console.log('📦 Data received:', report);
         setData(report);
       } catch (error) {
@@ -214,6 +254,7 @@ const VelocityDashboard = ({ storeId }) => {
             </th>
             <th className="border px-4 py-2">SKU</th>
             <th className="border px-4 py-2">Title</th>
+            <th className="border px-4 py-2">Registered Date</th>
             <th className="border px-4 py-2">Avg/Day</th>
             <th className="border px-4 py-2">Days Since Last Sale</th>
             <th className="border px-4 py-2">Tag</th>
@@ -245,6 +286,7 @@ const VelocityDashboard = ({ storeId }) => {
                   </td>
                   <td className="border px-4 py-2">{item.sku}</td>
                   <td className="border px-4 py-2">{item.title}</td>
+                  <td className="border px-4 py-2">{item.registered_date ? new Date(item.registered_date).toISOString().split('T')[0]: '-'}</td>
                   <td className="border px-4 py-2">{item.avg_units_per_day}</td>
                   <td className="border px-4 py-2">{item.days_since_last_sale}</td>
                   <td className="border px-4 py-2">
@@ -258,32 +300,34 @@ const VelocityDashboard = ({ storeId }) => {
       </table>
       
       {/* CHART for selected products */}
-      {selectedProducts.length > 0 ? (
-        <>
-          <div className="text-indigo-700 font-medium mb-2">
-            Showing chart for {selectedProducts.length} selected product{selectedProducts.length > 1 ? 's' : ''}.
+      <div id='velocity-chart'>
+        {selectedProducts.length > 0 ? (
+          <>
+            <div className="text-indigo-700 font-medium mb-2">
+              Showing chart for {selectedProducts.length} selected product{selectedProducts.length > 1 ? 's' : ''}.
+            </div>
+            <VelocityChart data={selectedProducts} />
+          </>
+        ) : showFastOnly ? (
+          <>
+            <div className="text-indigo-700 font-medium mb-2">
+              Showing chart for {fastProducts.length} fast-moving product{fastProducts.length > 1 ? 's' : ''}.
+            </div>
+            <FastSlowVelocityChart data={fastProducts} />
+          </>
+        ) : showSlowOnly ? (
+          <>
+            <div className="text-indigo-700 font-medium mb-2">
+              Showing chart for {slowProducts.length} slow-moving product{slowProducts.length > 1 ? 's' : ''}.
+            </div>
+            <FastSlowVelocityChart data={slowProducts} />
+          </>
+        ) : (
+          <div className="text-gray-500 italic mb-2">
+            Select products or apply a filter to view a chart 👆
           </div>
-          <VelocityChart data={selectedProducts} />
-        </>
-      ) : showFastOnly ? (
-        <>
-          <div className="text-indigo-700 font-medium mb-2">
-            Showing chart for {fastProducts.length} fast-moving product{fastProducts.length > 1 ? 's' : ''}.
-          </div>
-          <FastSlowVelocityChart data={fastProducts} />
-        </>
-      ) : showSlowOnly ? (
-        <>
-          <div className="text-indigo-700 font-medium mb-2">
-            Showing chart for {slowProducts.length} slow-moving product{slowProducts.length > 1 ? 's' : ''}.
-          </div>
-          <FastSlowVelocityChart data={slowProducts} />
-        </>
-      ) : (
-        <div className="text-gray-500 italic mb-2">
-          Select products or apply a filter to view a chart 👆
-        </div>
-      )}
+        )}
+      </div>
 
       {/* {selectedProducts.length > 0 && (
         <VelocityChart data={selectedProducts} />
@@ -304,6 +348,14 @@ const VelocityDashboard = ({ storeId }) => {
         className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
       >
         📤 Download CSV
+      </button>
+
+      {/* Download PDF button */}
+      <button
+        onClick={handleDownloadChartPDF}
+        className="ml-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+      >
+        📄 Download Chart as PDF
       </button>
 
     </div>
