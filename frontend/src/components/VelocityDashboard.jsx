@@ -1,7 +1,10 @@
-import React, { use, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { unparse } from 'papaparse';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { format, startOfYear, endOfYear } from 'date-fns';
 
 import { getVelocityReport } from '../services/api';
 import VelocityChart from './VelocityChart';
@@ -18,6 +21,8 @@ const VelocityDashboard = ({ storeId }) => {
   const [showFastOnly, setShowFastOnly] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const selectAllRef = useRef(null);
+  const [startDate, setStartDate] = useState(new Date(new Date().setFullYear(new Date().getFullYear() - 1)));
+  const [endDate, setEndDate] = useState(new Date());
 
   const handleFastOnlyChange = (checked) => {
     setShowFastOnly(checked);
@@ -31,13 +36,21 @@ const VelocityDashboard = ({ storeId }) => {
     setSelectedProducts([]); // 👈 clear selections
   };
 
-  const fastProducts = filtered.filter(
-    item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
+  // Filter fast and slow products
+  console.log('🔍 Raw filtered data before categorizing:', filtered);
+  const filteredArray = Array.isArray(filtered) ? filtered : [];
+  const fastProducts = filteredArray.filter(
+    item => item.avg_units_per_day >= 0.5 || item.days_since_last_sale <= 15
   );
 
-  const slowProducts = filtered.filter(
-    item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
+  const slowProducts = filteredArray.filter(
+    item => item.avg_units_per_day < 0.5 && item.days_since_last_sale > 15
   );
+  console.log('⚡ Fast products:', fastProducts);
+  console.log('🐢 Slow products:', slowProducts);
+
+  const safeFiltered = Array.isArray(filtered) ? filtered : [];
+
 
   // Export Chart as CSV function
   const handleExportCSV = () => {
@@ -102,67 +115,77 @@ const VelocityDashboard = ({ storeId }) => {
 
   // Fetch data from the API
   // Filter data based on search input and fast/slow movers
-  const chartData =
-    selectedProducts.length > 0
-      ? selectedProducts
-      : showFastOnly
-        ? filtered.filter(
-            item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
-          )
-        : showSlowOnly
-          ? filtered.filter(
-              item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
-            )
-          : [];
+  // const chartData =
+  //   selectedProducts.length > 0
+  //     ? selectedProducts
+  //     : showFastOnly
+  //       ? filtered.filter(
+  //           item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
+  //         )
+  //       : showSlowOnly
+  //         ? filtered.filter(
+  //             item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
+  //           )
+  //         : [];
   
-          const today = new Date().toISOString().split('T')[0];
-          const lastYear = new Date(new Date().setFullYear(new Date().getFullYear() - 1))
-            .toISOString()
-            .split('T')[0];
+  //         const today = new Date().toISOString().split('T')[0];
+  //         const lastYear = new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+  //           .toISOString()
+  //           .split('T')[0];
 
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const report = await getVelocityReport(storeId, lastYear, today);
-        console.log('📦 Data received:', report);
-        setData(report);
-      } catch (error) {
-        console.error('Failed to fetch velocity report:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
 
-    fetchData();
-  }, [storeId]);
 
-  useEffect(() => {
-    let results = data;
+const fetchData = async () => {
+  const formattedStart = startDate ? format(startDate, 'yyyy-MM-dd') : null;
+  const formattedEnd = endDate ? format(endDate, 'yyyy-MM-dd') : null;
 
-    // Search filter
-    if (search) {
-      results = results.filter(
-        item =>
-          item.title.toLowerCase().includes(search.toLowerCase()) ||
-          item.sku.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-  
-    // Fast & Slow movers only filter
-    if (showSlowOnly) {
-      results = results.filter(
-        item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
+  console.log('🛰️ Fetching with params:', { storeId, formattedStart, formattedEnd });
+
+  try {
+    const report = await getVelocityReport(storeId, formattedStart, formattedEnd);
+    console.log('📦 Data received:', report);
+    setData(report);
+    console.log('🧪 Data actually set into state:', report);
+  } catch (error) {
+    console.error('Failed to fetch velocity report:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+// console.log('Start:', startDate, 'End:', endDate);
+// console.log('Store ID:', storeId);
+useEffect(() => {
+  fetchData();
+}, [storeId, startDate, endDate]);
+
+// Filter data based on search input and fast/slow movers
+useEffect(() => {
+  let results = Array.isArray(data) ? [...data] : [];
+
+  if (search) {
+    results = results.filter(
+      item =>
+        item.title?.toLowerCase().includes(search.toLowerCase()) ||
+        item.sku?.toLowerCase().includes(search.toLowerCase())
     );
+  }
 
-    } else if (showFastOnly) {
-      results = results.filter(
-        item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
+  if (showSlowOnly) {
+    results = results.filter(
+      item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
     );
-    }
+  } else if (showFastOnly) {
+    results = results.filter(
+      item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
+    );
+  }
 
-    setFiltered(results);
-    }, [search, showSlowOnly, data]);
+  console.log('🔎 Filtered results:', results);
+  setFiltered(results);
+}, [search, showSlowOnly, showFastOnly, data]);
 
   // Update the select all checkbox state based on selected products
     useEffect(() => {
@@ -175,15 +198,17 @@ const VelocityDashboard = ({ storeId }) => {
   }, [selectedProducts, filtered]);
 
 
-  if (loading) return <p className="text-gray-500">Loading...</p>;
-  if (!data.length) return <p className="text-gray-500">No data available.</p>;
+  // if (loading) return <p className="text-gray-500">Loading...</p>;
+  // if (!data.length) return <p className="text-gray-500">No data available.</p>;
+  console.log('✅ Final filtered products:', filtered);
+console.log('✅ All data from server:', data);
+
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
       <h2 className="text-xl font-bold mb-4">📦 Product Velocity Report</h2>
 
       {/* Filter/Search Bar */}
-  
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <input
           type="text"
@@ -192,6 +217,43 @@ const VelocityDashboard = ({ storeId }) => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+
+        {/* Date Range Filter */}
+        <div className="flex gap-4 items-end mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Start Date</label>
+            <DatePicker
+              selected={startDate}
+              onChange={(date) => setStartDate(date)}
+              dateFormat="yyyy-MM-dd"
+              className="border rounded px-3 py-2"
+              placeholderText="Select start date"
+              isClearable
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">End Date</label>
+            <DatePicker
+              selected={endDate}
+              onChange={(date) => setEndDate(date)}
+              dateFormat="yyyy-MM-dd"
+              className="border rounded px-3 py-2"
+              placeholderText="Select end date"
+              isClearable
+            />
+          </div>
+
+          <button
+            className="bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300 transition"
+            onClick={() => {
+              setStartDate(startOfYear(new Date()));
+              setEndDate(endOfYear(new Date()));
+            }}
+          >
+            This Year
+          </button>
+        </div>
 
         {/* Advance option for Fast & Slow product chart */}
         <label className="flex items-center space-x-2">
@@ -261,12 +323,12 @@ const VelocityDashboard = ({ storeId }) => {
           </tr>
         </thead>
         <tbody>
-          {filtered.length === 0 ? (
+          {safeFiltered.length === 0 ? (
             <tr>
               <td colSpan="5" className="text-center p-4">No matching products</td>
             </tr>
           ) : (
-            filtered.map((item, i) => {
+            safeFiltered.map((item, i) => {
               const isSlow = item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30;
               return (
                 <tr key={i} className="transition hover:bg-indigo-50">
