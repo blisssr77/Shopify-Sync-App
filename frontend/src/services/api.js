@@ -17,9 +17,10 @@ export const getVelocityReport = async (storeId, startDate, endDate) => {
     });
 
     // ✅ Return just the data (assuming the structure is { data: { data: [...] } })
+    console.log('✅ API raw response:', response);
     return response.data.data;
   } catch (error) {
-    console.error('❌ Error fetching velocity report:', error);
+    console.error('❌❌ Error fetching velocity report:', error);
     throw error;
   }
 };
