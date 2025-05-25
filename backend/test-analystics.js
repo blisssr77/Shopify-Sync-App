@@ -16,7 +16,7 @@ const pool = new Pool();
     const report = await getProductVelocityReport(store.id);
     console.log('📊 Product Velocity Report:\n');
     report.forEach((item, index) => {
-      const isSlow = item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30;
+      const is = item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30;
 
       console.log(`${index + 1}. ${item.sku} (${item.title})`);
       console.log(`   Total Sold: ${item.total_units_sold}`);

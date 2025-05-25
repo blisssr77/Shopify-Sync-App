@@ -42,14 +42,14 @@ async function saveSalesFromOrders(storeId, orders) {
 
       for (const item of order.line_items) {
         await client.query(
-          `INSERT INTO sales_reports (store_id, product_id, sku, title, quantity, sale_date)
+          `INSERT INTO sales_reports (store_id, product_id, sku, title, units_sold, sale_date)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
             storeId,
             item.product_id,
             item.sku,
             item.title,
-            item.quantity,
+            item.units_sold,
             saleDate,
           ]
         );
