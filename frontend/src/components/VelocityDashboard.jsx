@@ -43,7 +43,7 @@ const VelocityDashboard = ({ storeId }) => {
   console.log('🔍 Raw filtered data before categorizing:', filtered);
   const filteredArray = Array.isArray(filtered) ? filtered : [];
   const fastProducts = filteredArray.filter(
-    item => item.avg_units_per_day >= 0.5 || item.days_since_last_sale <= 15
+    item => item.avg_units_per_day >= 0.5 || item.days_since_last_sale <= 7
   );
 
   const slowProducts = filteredArray.filter(
@@ -116,72 +116,72 @@ const VelocityDashboard = ({ storeId }) => {
     pdf.save('velocity_chart.pdf');
   };
 
-// Fetch data from API
-const fetchData = async () => {
-  const formattedStart = startDate ? format(startDate, 'yyyy-MM-dd') : null;
-  const formattedEnd = endDate ? format(endDate, 'yyyy-MM-dd') : null;
+  // Fetch data from API
+  const fetchData = async () => {
+    const formattedStart = startDate ? format(startDate, 'yyyy-MM-dd') : null;
+    const formattedEnd = endDate ? format(endDate, 'yyyy-MM-dd') : null;
 
-  console.log('🛰️ Fetching with params:', { storeId, formattedStart, formattedEnd });
+    console.log('🛰️ Fetching with params:', { storeId, formattedStart, formattedEnd });
 
-  try {
-    const report = await getVelocityReport(storeId, formattedStart, formattedEnd);
-    console.log('📦 Backend Data received:', report, formattedStart, formattedEnd);
-    setData(report);
-    console.log('🧪 Backend Data actually set into state:', report);
-  } catch (error) {
-    console.error('Failed to fetch Backend velocity report:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const report = await getVelocityReport(storeId, formattedStart, formattedEnd);
+      console.log('📦 Backend Data received:', report, formattedStart, formattedEnd);
+      setData(report);
+      console.log('🧪 Backend Data actually set into state:', report);
+    } catch (error) {
+      console.error('Failed to fetch Backend velocity report:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-// Fetch data when component mounts or when storeId, startDate, or endDate changes
-useEffect(() => {
-  fetchData();
-}, [storeId, startDate, endDate]);
-
-
-// Filter data based on search input and fast/slow movers
-useEffect(() => {
-  let results = Array.isArray(data) ? [...data] : [];
-
-  if (search) {
-    results = results.filter(
-      item =>
-        item.title?.toLowerCase().includes(search.toLowerCase()) ||
-        item.sku?.toLowerCase().includes(search.toLowerCase())
-    );
-  }
-
-  if (showSlowOnly) {
-    results = results.filter(
-      item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
-    );
-  } else if (showFastOnly) {
-    results = results.filter(
-      item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
-    );
-  }
-
-  console.log('🔎 Filtered results:', results);
-  setFiltered(results);
-}, [search, showSlowOnly, showFastOnly, data]);
-
-// Update the select all checkbox state based on selected products
+  // Fetch data when component mounts or when storeId, startDate, or endDate changes
   useEffect(() => {
-  if (!selectAllRef.current) return;
-
-  const allSelected = selectedProducts.length === filtered.length;
-  const noneSelected = selectedProducts.length === 0;
-
-  selectAllRef.current.indeterminate = !allSelected && !noneSelected;
-}, [selectedProducts, filtered]);
+    fetchData();
+  }, [storeId, startDate, endDate]);
 
 
-if (loading) return <p className="text-gray-500">Loading...</p>;
-if (!data.length) return <p className="text-gray-500">No data available.</p>;
-console.log('✅ Final filtered products:', filtered);
-console.log('✅ All data from server:', data);
+  // Filter data based on search input and fast/slow movers
+  useEffect(() => {
+    let results = Array.isArray(data) ? [...data] : [];
+
+    if (search) {
+      results = results.filter(
+        item =>
+          item.title?.toLowerCase().includes(search.toLowerCase()) ||
+          item.sku?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (showSlowOnly) {
+      results = results.filter(
+        item => item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30
+      );
+    } else if (showFastOnly) {
+      results = results.filter(
+        item => item.avg_units_per_day >= 0.2 || item.days_since_last_sale <= 30
+      );
+    }
+
+    console.log('🔎 Filtered results:', results);
+    setFiltered(results);
+  }, [search, showSlowOnly, showFastOnly, data]);
+
+  // Update the select all checkbox state based on selected products
+    useEffect(() => {
+      if (!selectAllRef.current) return;
+
+      const allSelected = selectedProducts.length === filtered.length;
+      const noneSelected = selectedProducts.length === 0;
+
+      selectAllRef.current.indeterminate = !allSelected && !noneSelected;
+    }, [selectedProducts, filtered]);
+
+
+  if (loading) return <p className="text-gray-500">Loading...</p>;
+  if (!data.length) return <p className="text-gray-500">No data available.</p>;
+  console.log('✅ Final filtered products:', filtered);
+  console.log('✅ All data from server:', data);
 
 
 
@@ -274,11 +274,11 @@ console.log('✅ All data from server:', data);
             </button>
           )}
         </div>
-        <div className="text-sm text-gray-600 mb-2">
+        {/* <div className="text-sm text-gray-600 mb-2">
           {selectedProducts.length > 0
             ? `${selectedProducts.length} of ${filtered.length} selected`
             : `No products selected`}
-        </div>
+        </div> */}
         <table className="min-w-full border-collapse border border-gray-300">
           <thead>
             <tr>
@@ -310,7 +310,7 @@ console.log('✅ All data from server:', data);
               </tr>
             ) : (
               safeFiltered.map((item, i) => {
-                const isSlow = item.avg_units_per_day < 0.2 && item.days_since_last_sale > 30;
+                const isSlow = item.avg_units_per_day < 0.5 && item.days_since_last_sale > 15;
                 return (
                   <tr key={i} className="transition hover:bg-indigo-50">
                     <td className="border px-4 py-2 text-center">

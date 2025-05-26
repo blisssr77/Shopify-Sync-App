@@ -10,6 +10,8 @@ import {
   CartesianGrid
 } from 'recharts';
 
+// This component visualizes the 'Average units sold per day for each SKU' in a bar chart format.
+
 const VelocityChart = ({ data }) => {
   const chartData = data.map(item => ({
     sku: item.sku,
