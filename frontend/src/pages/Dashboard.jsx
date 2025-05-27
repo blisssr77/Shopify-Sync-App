@@ -75,6 +75,7 @@ export default function Dashboard() {
       <main className="flex-1 bg-[#f9fafb] p-6 overflow-y-auto">
         <h1 className="text-2xl font-bold">Welcome to {activeTab}</h1>
         
+        
         <h1 className="bg-emerald-500 text-white p-4 rounded">Welcome to {activeTab}</h1>
         <p className="text-sm text-gray-600 mt-2">Main content will appear here.</p>
       </main>
