@@ -1,17 +1,49 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import React, { useEffect } from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, useNavigate } from "react-router-dom";
 import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import { supabase } from "./lib/supabaseClient";
+import reportWebVitals from "./reportWebVitals";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+import VelocityDashboard from "./components/VelocityDashboard";
+import Dashboard from "./pages/Dashboard";
+
+
+// App component
+function App() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/dashboard");
+      } else {
+        navigate("/login");
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [navigate]);
+
+  return (
+    <div className="max-w-6xl mx-auto py-10">
+      {/* <VelocityDashboard storeId="1bd97d0c-4e57-42e9-9236-afade7b8bdc6" /> */}
+      <Dashboard storeId="1bd97d0c-4e57-42e9-9236-afade7b8bdc6" />
+    </div>
+  );
+}
+
+// Render the app
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

@@ -1,19 +1,24 @@
-import { LayoutDashboard, Box, ShoppingCart, PackageSearch, BarChart3, Settings, HelpCircle, Phone, LogOut } from "lucide-react";
-import { cn } from "../lib/utils"; // if you’re using clsx or similar utility
+import { LayoutDashboard, Box, ShoppingCart, PackageSearch, BarChart3, Settings, HelpCircle, Phone, LogOut, BarChart2 } from "lucide-react";
+import { cn } from "../lib/utils"; 
 import { useState } from "react";
+import VelocityDashboard from "../components/VelocityDashboard";
 
 export default function Dashboard() {
+  // State to manage the active tab
   const [activeTab, setActiveTab] = useState("Overview");
 
+  // Define the navigation items and footer items
   const navItems = [
     { name: "Overview", icon: LayoutDashboard },
     { name: "Product", icon: Box },
     { name: "Orders", icon: ShoppingCart },
-    { name: "Inventory", icon: PackageSearch, badge: 2 },
+    { name: "Inventory", icon: PackageSearch, badge: 3 }, // Example badge
+    { name: "Velocity Chart", icon: BarChart2, badge: 5 }, // Example badge
     { name: "Analytics", icon: BarChart3 },
     { name: "Setting", icon: Settings },
   ];
 
+  // Define the footer items
   const footerItems = [
     { name: "Help Centre", icon: HelpCircle },
     { name: "Contact Us", icon: Phone },
@@ -22,7 +27,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar */}
+      {/* Sidebar Header */}
       <aside className="w-64 bg-[#0d1321] text-white flex flex-col justify-between py-6 px-4">
         <div>
           <div className="flex items-center mb-10 px-2">
@@ -32,6 +37,7 @@ export default function Dashboard() {
             <span className="text-lg font-semibold">Mboard</span>
           </div>
 
+          {/* navigation items */}
           <nav className="space-y-2">
             {navItems.map(({ name, icon: Icon, badge }) => (
               <button
@@ -73,11 +79,14 @@ export default function Dashboard() {
 
       {/* Main content placeholder */}
       <main className="flex-1 bg-[#f9fafb] p-6 overflow-y-auto">
-        <h1 className="text-2xl font-bold">Welcome to {activeTab}</h1>
-        
-        
-        <h1 className="bg-emerald-500 text-white p-4 rounded">Welcome to {activeTab}</h1>
-        <p className="text-sm text-gray-600 mt-2">Main content will appear here.</p>
+          {activeTab === "Analytics" ? (
+            <VelocityDashboard />
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold">Welcome to {activeTab}</h1>
+              <p className="text-sm text-gray-600 mt-2">Main content will appear here.</p>
+            </>
+          )}
       </main>
     </div>
   );
