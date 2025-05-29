@@ -1,7 +1,7 @@
 import { LayoutDashboard, Box, ShoppingCart, PackageSearch, BarChart3, Settings, HelpCircle, Phone, LogOut, BarChart2 } from "lucide-react";
 import { cn } from "../lib/utils"; 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { data, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import VelocityDashboard from "../components/VelocityDashboard";
 
@@ -9,8 +9,39 @@ export default function Dashboard() {
   // State to manage the active tab
   const [activeTab, setActiveTab] = useState("Overview");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [storeId, setStoreId] = useState(null); 
 
   const navigate = useNavigate();
+
+  // Fetch the storeId from the user's profile on component mount
+  useEffect(() => {
+    const fetchStoreId = async () => {
+      // Get the current user
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error);
+        return;
+      }
+
+      const userId = user.id;
+
+      // Get user's storeId from profile table (if you have one)
+      const { data, error: profileError } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('id', userId)
+        .single();
+
+      // Check if the profile data was fetched successfully
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+      } else {
+        setStoreId(data.store_id);
+      }
+    };
+
+    fetchStoreId();
+  }, []);
 
   // Handle logout functionality
   const handleLogout = async () => {
@@ -131,14 +162,18 @@ export default function Dashboard() {
 
       {/* Main content placeholder */}
       <main className="flex-1 bg-[#f9fafb] p-6 overflow-y-auto">
-          {activeTab === "Velocity Chart" ? (
-            <VelocityDashboard />
+        {activeTab === "Velocity Chart" ? (
+          !storeId ? (
+            <p>Loading...</p>
           ) : (
-            <>
-              <h1 className="text-2xl font-bold">Welcome to {activeTab}</h1>
-              <p className="text-sm text-gray-600 mt-2">Main content will appear here.</p>
-            </>
-          )}
+            <VelocityDashboard storeId={storeId} />
+          )
+        ) : (
+          <>
+            <h1 className="text-2xl font-bold">Welcome to {activeTab}</h1>
+            <p className="text-sm text-gray-600 mt-2">Main content will appear here.</p>
+          </>
+        )}
       </main>
     </div>
   );

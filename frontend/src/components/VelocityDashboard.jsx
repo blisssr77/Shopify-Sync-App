@@ -27,12 +27,14 @@ const VelocityDashboard = ({ storeId }) => {
   const [endDate, setEndDate] = useState(new Date());
   const [currentTab, setCurrentTab] = useState('Velocity Report');
 
+  // Handle Fast and Slow product toggles
   const handleFastOnlyChange = (checked) => {
     setShowFastOnly(checked);
     setShowSlowOnly(false);
     setSelectedProducts([]); // 👈 clear selections
   };
 
+  // Handle Slow product toggles
   const handleSlowOnlyChange = (checked) => {
     setShowSlowOnly(checked);
     setShowFastOnly(false);
@@ -46,6 +48,7 @@ const VelocityDashboard = ({ storeId }) => {
     item => item.avg_units_per_day >= 0.5 || item.days_since_last_sale <= 7
   );
 
+  // Categorize slow products
   const slowProducts = filteredArray.filter(
     item => item.avg_units_per_day < 0.5 && item.days_since_last_sale > 15
   );
@@ -71,6 +74,7 @@ const VelocityDashboard = ({ storeId }) => {
       return;
     }
 
+    // Format data for CSV export
     const formattedData = dataToExport.map(item => ({
       sku: item.sku,
       title: item.title,
@@ -82,10 +86,10 @@ const VelocityDashboard = ({ storeId }) => {
       is_slow: item.is_slow ? 'Yes' : 'No',
     }));
 
+    // Convert to CSV format
     const csv = unparse(formattedData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', 'velocity_report.csv');

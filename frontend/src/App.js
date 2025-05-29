@@ -28,7 +28,7 @@ function App() {
   }, [navigate]);
 
   return (
-    <div className="max-w-6xl mx-auto py-10">
+    <div className="w-full min-h-screen">
       <Routes>
         <Route path="/login" element={<AuthPage />} />
         <Route path="/dashboard" element={<Dashboard storeId="1bd97d0c-4e57-42e9-9236-afade7b8bdc6" />} />

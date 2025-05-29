@@ -14,34 +14,45 @@ export default function AuthPage() {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
+
     // Handle form submission
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError(null);
-        setLoading(true);
-        setConfirmationEmailSent(false);
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    setConfirmationEmailSent(false);
 
-        try {
-            if (isLogin) {
-                const { error } = await supabase.auth.signInWithPassword(formData);
-                if (error) throw error;
-            } else {
-                const { data, error } = await supabase.auth.signUp(formData);
-                if (error) throw error;
-                setConfirmationEmailSent(true); // ✅ Show success message
+    try {
+        if (isLogin) {
+        // 🔐 User is logging in
+        const { error } = await supabase.auth.signInWithPassword(formData);
+        if (error) throw error;
+        } else {
+        // 📝 User is signing up
+        const { data, error } = await supabase.auth.signUp(formData);
+        if (error) throw error;
 
-                // ✅ Automatically switch back to login view after 4 seconds
-                setTimeout(() => {
-                    setConfirmationEmailSent(false);
-                }, 4000);
-            }
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-            setIsLogin(true); // Switch to login view after signup
+        // 📩 Show confirmation message
+        setConfirmationEmailSent(true);
+
+        // ⏳ Auto-clear confirmation message after 4 seconds
+        setTimeout(() => {
+            setConfirmationEmailSent(false);
+        }, 4000);
+
+        // 🛠 Optionally insert user profile here if needed
+        // await supabase.from("profiles").insert({ id: data.user.id, store_id: ... });
         }
+
+        // ✅ After signup, switch to login view
+        if (!isLogin) setIsLogin(true);
+    } catch (err) {
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
     };
+
     // Handle Google login
     const handleGoogleLogin = async () => {
         const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
