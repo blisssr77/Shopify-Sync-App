@@ -30,16 +30,16 @@ export default function AuthPage() {
                 if (error) throw error;
                 setConfirmationEmailSent(true); // ✅ Show success message
 
-                // ✅ Automatically switch back to login view after 3 seconds
+                // ✅ Automatically switch back to login view after 4 seconds
                 setTimeout(() => {
-                    setIsLogin(true);
                     setConfirmationEmailSent(false);
-                }, 3000);
+                }, 4000);
             }
         } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
+            setIsLogin(true); // Switch to login view after signup
         }
     };
     // Handle Google login

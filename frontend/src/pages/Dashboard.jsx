@@ -1,11 +1,26 @@
 import { LayoutDashboard, Box, ShoppingCart, PackageSearch, BarChart3, Settings, HelpCircle, Phone, LogOut, BarChart2 } from "lucide-react";
 import { cn } from "../lib/utils"; 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 import VelocityDashboard from "../components/VelocityDashboard";
 
 export default function Dashboard() {
   // State to manage the active tab
   const [activeTab, setActiveTab] = useState("Overview");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Handle logout functionality
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Logout error:", error.message);
+    } else {
+      navigate("/login");
+    }
+  };
 
   // Define the navigation items and footer items
   const navItems = [
@@ -60,8 +75,44 @@ export default function Dashboard() {
           </nav>
         </div>
 
+        {/* Footer items */}
         <div className="space-y-2">
-          {footerItems.map(({ name, icon: Icon, danger }) => (
+        {footerItems.map(({ name, icon: Icon, danger }) => {
+          if (name === "Log out") {
+            return showLogoutConfirm ? (
+              <div key="logout-confirm" className="px-3">
+                <p className="text-sm text-gray-300 mb-2">Are you sure you want to log out?</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 bg-orange-500 hover:bg-orange-700 text-white text-sm py-1 rounded"
+                  >
+                    Log out
+                  </button>
+                  <button
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-sm py-1 rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                key="logout"
+                onClick={() => setShowLogoutConfirm(true)}
+                className={cn(
+                  "flex items-center w-full px-3 py-2 rounded-lg text-sm hover:bg-[#1c2130] transition",
+                  "text-orange-400 hover:text-orange-300"
+                )}
+              >
+                <Icon className="w-5 h-5 mr-3" />
+                {name}
+              </button>
+            );
+          }
+
+          return (
             <button
               key={name}
               onClick={() => console.log(`${name} clicked`)}
@@ -73,13 +124,14 @@ export default function Dashboard() {
               <Icon className="w-5 h-5 mr-3" />
               {name}
             </button>
-          ))}
+          );
+        })}
         </div>
       </aside>
 
       {/* Main content placeholder */}
       <main className="flex-1 bg-[#f9fafb] p-6 overflow-y-auto">
-          {activeTab === "Analytics" ? (
+          {activeTab === "Velocity Chart" ? (
             <VelocityDashboard />
           ) : (
             <>
