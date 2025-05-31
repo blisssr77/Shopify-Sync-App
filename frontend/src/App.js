@@ -5,8 +5,12 @@ import { supabase } from "./lib/supabaseClient";
 import Dashboard from "./pages/Dashboard";
 import VelocityDashboard from "./components/VelocityDashboard";
 import AuthPage from "./pages/AuthPage";
+import useIdleLogout from "./hooks/useIdleLogout";
 
 function App() {
+  // Custom hook to handle idle logout
+  useIdleLogout();
+  // Navigate function from react-router
   const navigate = useNavigate();
 
   // Check if user is authenticated on initial load

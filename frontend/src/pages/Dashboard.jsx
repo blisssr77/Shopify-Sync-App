@@ -1,7 +1,7 @@
 import { LayoutDashboard, Box, ShoppingCart, PackageSearch, BarChart3, Settings, HelpCircle, Phone, LogOut, BarChart2 } from "lucide-react";
 import { cn } from "../lib/utils"; 
 import { useEffect, useState } from "react";
-import { data, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import VelocityDashboard from "../components/VelocityDashboard";
 
